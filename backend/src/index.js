@@ -15,11 +15,17 @@ app.use(
   swaggerUi.setup(specs, {
     customCss: ".swagger-ui .topbar { display: none }", // Remove a barra de identificação do swagger.
     customSiteTitle: "Documentação da API (Rede Social)",
-  })
+  }),
 );
 
 const usuario = require("./routes/usuarios");
+const comentario = require("./routes/comentarios");
+const post = require("./routes/posts");
+const like = require("./routes/likes");
 app.use("/usuario", usuario);
+app.use("/comentario", comentario);
+app.use("/post", post);
+app.use("/like", like);
 
 app.listen(port, () => {
   console.log(`Servidor executando em http://localhost:${port}`);
