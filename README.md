@@ -47,9 +47,3 @@ A página inicial do website pode ser encontrada em:
 ```
 http://localhost:8080
 ```
-
-Por fim, a aplicação a ser desenvolvida na pasta frontend pode ser acessada no endereço abaixo:
-
-```
-http://localhost:5173
-```
