@@ -20,7 +20,7 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ msg: "Usuário já existe" });
     }
 
-    const hash = await bcrypt.hash(senha, 12);
+    const hash = await bcrypt.hash(senha, 10);
     const r = await db.query(
       "INSERT INTO usuarios(login, senha, nome, img) VALUES ($1,$2,$3,$4) RETURNING *",
       [login, hash, nome, img],
@@ -50,10 +50,13 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ msg: "Usuário não existe" });
     }
 
+    const hash = await bcrypt.hash(senha, 10);
+    console.log(hash);
+
     const ok = await bcrypt.compare(senha, existe.rows[0].senha);
     if (ok) {
       const { senha, ...usuario } = existe.rows[0];
-      return res.status(200).json({ msg: "Login efetuado com sucesso", user: usuario });
+      return res.status(200).json({ msg: "Login efetuado com sucesso", usuario: usuario });
     }
     return res.status(403).json({ msg: "Senha incorreta" });
   } catch (error) {

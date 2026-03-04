@@ -39,6 +39,46 @@ router.post("/", async (req, res) => {
   }
 });
 
+router.put("/:id", async (req, res) => {
+  try {
+    let { usuario, texto } = req.body || {};
+    if (!usuario) {
+      return res.status(400).json({ mgs: "Usuário inválido" });
+    }
+    if (!texto) {
+      return res.status(400).json({ mgs: "Texto inválido" });
+    }
+    const existeU = await db.query("SELECT * FROM usuarios WHERE id = $1", [usuario]);
+    if (!existeU.rows.length) {
+      return res.status(400).json({ msg: "Usuário não existe" });
+    }
+
+    const comentario = await db.query("SELECT * FROM comentarios WHERE id = $1", [req.params.id]);
+    if (!comentario.rows.length) {
+      return res.status(400).json({ msg: "Comentario não existe" });
+    }
+
+    if (usuario != comentario.rows[0].usuario) {
+      return res
+        .status(403)
+        .json({ msg: "Você está tentando editar um comentario de outro usuário" });
+    }
+
+    const r = await db.query(
+      "UPDATE comentarios SET texto = $1, editado = TRUE WHERE id = $2 RETURNING *",
+      [texto, req.params.id],
+    );
+    if (!r.rows.length) {
+      return res.status(400).json({ msg: "Erro edição de comentário" });
+    } else {
+      return res.status(201).json(r.rows[0]);
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ msg: "Erro geral" });
+  }
+});
+
 router.delete("/:id", async (req, res) => {
   try {
     const { usuario } = req.body || {};

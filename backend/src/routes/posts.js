@@ -27,7 +27,7 @@ router.post("/", async (req, res) => {
       return res.status(201).json(r.rows[0]);
     }
   } catch (error) {
-    return res.status(400).json({ msg: "Erro geral" });
+    return res.status(500).json({ msg: "Erro geral" });
   }
 });
 
@@ -70,7 +70,7 @@ router.get("/:id", async (req, res) => {
     }
 
     const comentarios = await db.query(
-      "SELECT id, usuario, texto, data FROM comentarios WHERE post = $1 ORDER BY DATA",
+      "SELECT id, usuario, texto, data FROM comentarios WHERE post = $1 ORDER BY data",
       [post.rows[0].id],
     );
     const likes = await db.query(
@@ -84,6 +84,47 @@ router.get("/:id", async (req, res) => {
       likes: likes.rows,
     });
   } catch (error) {
+    return res.status(500).json({ msg: "Erro geral" });
+  }
+});
+
+router.put("/:id", async (req, res) => {
+  try {
+    let { usuario, texto, img } = req.body || {};
+    if (!usuario) {
+      return res.status(400).json({ mgs: "Usuário inválido" });
+    }
+    if (!texto && !img) {
+      return res.status(400).json({ mgs: "Você deve enviar uma imagem e ou um texto!" });
+    }
+    const existeU = await db.query("SELECT * FROM usuarios WHERE id = $1", [usuario]);
+    if (!existeU.rows.length) {
+      return res.status(400).json({ msg: "Usuário não existe" });
+    }
+
+    const post = await db.query("SELECT * FROM posts WHERE id = $1", [req.params.id]);
+    if (!post.rows.length) {
+      return res.status(400).json({ msg: "Post não existe" });
+    }
+
+    if (usuario != post.rows[0].usuario) {
+      return res.status(403).json({ msg: "Você está tentando editar um post de outro usuário" });
+    }
+
+    texto = texto || post.rows[0].texto;
+    img = img || post.rows[0].img;
+
+    const r = await db.query(
+      "UPDATE posts SET texto = $1, img = $2, editado = TRUE WHERE id = $3 RETURNING *",
+      [texto, img, req.params.id],
+    );
+    if (!r.rows.length) {
+      return res.status(400).json({ msg: "Erro edição de post" });
+    } else {
+      return res.status(201).json(r.rows[0]);
+    }
+  } catch (error) {
+    console.log(error);
     return res.status(500).json({ msg: "Erro geral" });
   }
 });
