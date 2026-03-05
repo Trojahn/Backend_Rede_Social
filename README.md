@@ -47,3 +47,8 @@ A página inicial do website pode ser encontrada em:
 ```
 http://localhost:8080
 ```
+
+O endereço base para o backend é:
+```
+http://localhost:3000
+```
