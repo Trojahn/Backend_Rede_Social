@@ -3,6 +3,11 @@ const router = express.Router();
 const bcrypt = require("bcrypt");
 const db = require("../db");
 
+router.get("/", async (req, res) => {
+  const r = await db.query("SELECT id, login, nome, img FROM usuarios");
+  return res.status(200).json(r.rows);
+});
+
 router.post("/", async (req, res) => {
   try {
     const { login, senha, nome, img } = req.body || {};

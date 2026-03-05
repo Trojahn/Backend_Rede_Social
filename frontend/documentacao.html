@@ -67,14 +67,20 @@
             <th>Resultado</th>
         </tr>
         <tr>
+            <td>GET</td>
+            <td><code>GET <a href="http://localhost:3000/usuarios">/usuarios</a></code></td>
+            <td>Retorna a lista com todos os usuários cadastrados.</td>
+            <td>[{ "id":1, "login":"usuario", "nome":"Nome", "img":null }, ...]</td>
+        </tr>
+        <tr>
             <td>POST</td>
-            <td><code>POST /usuarios</code></td>
+            <td><code>POST <a href="http://localhost:3000/usuarios">/usuarios</a></code></td>
             <td>Cadastrar novo usuário. Requer <b>login</b>, <b>senha</b> e <b>nome</b> no corpo da requisição. O parâmetro <b>img</b> é opcional</td>
             <td>{ "id":1, "login":"usuario", "nome":"Nome", "img":null }</td>
         </tr>
         <tr>
             <td>POST</td>
-            <td><code>POST /usuarios/login</code></td>
+            <td><code>POST <a href="http://localhost:3000/usuarios/login">/usuarios/login</a></code></td>
             <td>Efetua login. Requer <b>login</b> e <b>senha</b> no corpo da requisição.</td>
             <td>{ "msg":"Login efetuado com sucesso", "usuario":{...} }</td>
         </tr>
@@ -90,31 +96,31 @@
         </tr>
         <tr>
             <td>POST</td>
-            <td><code>POST /posts</code></td>
+            <td><code>POST <a href="http://localhost:3000/posts">/posts</a></code></td>
             <td>Criar um post. Requer <b>usuario</b>, <b>texto</b> e/ou <b>img</b> no corpo da requisição.</td>
             <td>{ "id":1, "usuario":1, "texto":"...", "img": "http://...." }</td>
         </tr>
         <tr>
             <td>GET</td>
-            <td><code>GET /posts</code></td>
+            <td><code>GET <a href="http://localhost:3000/posts">/posts</a></code></td>
             <td>Retorna todos os posts com seus respectivos comentários e likes</td>
             <td>[ { "id":1, "usuario":1, "texto":"...", "img": "http://....", "likes" : [...], "comentarios" : [... ] }, ... ]</td>
         </tr>
         <tr>
             <td>GET</td>
-            <td><code>GET /posts/10</code></td>
+            <td><code>GET <a href="http://localhost:3000/posts/10">/posts/10</a></code></td>
             <td>Busca um post por ID (por exemplo, 10)</td>
             <td>{ "id":10, "usuario":1, "texto":"...", "img": "http://....", "likes" : [...], "comentarios" : [... ] }</td>
         </tr>
         <tr>
             <td>PUT</td>
-            <td><code>PUT /posts/10</code></td>
+            <td><code>PUT <a href="http://localhost:3000/posts/10">/posts/10</a></code></td>
             <td>Atualiza texto e/ou img de um post por ID (por exemplo, 10). Requer <b>usuario</b>, <b>texto</b> e/ou <b>img</b> no corpo da requisição. Somente o usuário proprietário pode fazer a operação.</td>
             <td>{ "id":10, "usuario":1, "texto":"...", "img": "http://....", "likes" : [...], "comentarios" : [... ] }</td>
         </tr>
         <tr>
             <td>DELETE</td>
-            <td><code>DELETE /posts/10</code></td>
+            <td><code>DELETE <a href="http://localhost:3000/posts/10">/posts/10</a></code></td>
             <td>Deleta um post por ID (por exemplo, 10). Requer <b>usuario</b> no corpo da requisição. Somente o usuário proprietário pode fazer a operação.</td>
             <td>{ "msg":"Post deletado com sucesso!" }</td>
         </tr>
@@ -130,19 +136,19 @@
         </tr>
         <tr>
             <td>POST</td>
-            <td><code>POST /comentarios</code></td>
+            <td><code>POST <a href="http://localhost:3000/comentarios">/comentarios</a></code></td>
             <td>Adiciona um comentário. Requer <b>usuario</b>, <b>post</b> e <b>texto</b> no corpo da requisição.</td>
             <td>{ "id":1, "usuario":1, "texto":"...", "post":5 }</td>
         </tr>
         <tr>
             <td>PUT</td>
-            <td><code>PUT /comentarios/33</code></td>
+            <td><code>PUT <a href="http://localhost:3000/comentarios/33">/comentarios/33</a></code></td>
             <td>Altera o texto de um comentário por ID (por exemplo, 33). Requer <b>usuario</b> e <b>texto</b> no corpo da requisição. Somente o usuário proprietário pode fazer a operação.</td>
             <td>{ "id":33, "texto":"novo texto", ... }</td>
         </tr>
         <tr>
             <td>DELETE</td>
-            <td><code>DELETE /comentarios/22</code></td>
+            <td><code>DELETE <a href="http://localhost:3000/comentarios/22">/comentarios/22</a></code></td>
             <td>Remove um comentário por ID (por exemplo, 22). Requer <b>usuario</b> no corpo da requisição. Somente o usuário proprietário pode fazer a operação.</td>
             <td>{ "msg":"Comentário removido com sucesso" }</td>
         </tr>
@@ -158,25 +164,13 @@
         </tr>
         <tr>
             <td>POST</td>
-            <td><code>POST /likes</code></td>
+            <td><code>POST <a href="http://localhost:3000/likes">/likes</a></code></td>
             <td>Adiciona ou remove um like de um post específico. Requer <b>usuario</b> e <b>texto</b> no corpo da requisição.</td>
             <td>{ "msg":"Like adicionado com sucesso!" } ou { "msg":"Like removido com sucesso!" }</td>
         </tr>
     </table>
 
     <p class="note">Todas as requisições aceitam dados em <code>application/x-www-form-urlencoded</code></p>
-
-    <script>
-        // clicando em qualquer <code> copia para clipboard
-        document.querySelectorAll('code').forEach(el => {
-            el.addEventListener('click', () => {
-                navigator.clipboard.writeText(el.textContent).then(() => {
-                    el.style.background = '#dff0d8';
-                    setTimeout(() => el.style.background = '#f0f0f0', 300);
-                });
-            });
-        });
-    </script>
 </body>
 
 </html>
