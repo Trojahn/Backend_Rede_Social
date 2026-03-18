@@ -20,7 +20,7 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ msg: "Post não existe" });
     }
 
-    const existeU = await db.query("SELECT * FROM usuarios WHERE id = $1", [post]);
+    const existeU = await db.query("SELECT * FROM usuarios WHERE id = $1", [usuario]);
     if (!existeU.rows.length) {
       return res.status(400).json({ msg: "Usuario não existe" });
     }
