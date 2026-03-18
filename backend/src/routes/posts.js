@@ -137,7 +137,7 @@ router.delete("/:id", async (req, res) => {
       return res.status(400).json({ msg: "Post não encontrado" });
     }
 
-    const existeU = await db.query("SELECT * FROM usuarios WHERE id = $1", [req.params.id]);
+    const existeU = await db.query("SELECT * FROM usuarios WHERE id = $1", [usuario]);
     if (!existeU.rows.length) {
       return res.status(400).json({ msg: "Usuario não existe" });
     }
