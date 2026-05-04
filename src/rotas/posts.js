@@ -1,25 +1,17 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
+const { checkToken } = require("../middlewares/auth");
 
-router.post("/", async (req, res) => {
+router.post("/", checkToken, async (req, res) => {
   try {
-    const { usuario, texto, img } = req.body || {};
-    if (!usuario) {
-      return res.status(400).json({ mgs: "Usuário inválido" });
-    }
+    const { texto, img } = req.body || {};
     if (!texto && !img) {
-      return res.status(400).json({ mgs: "Você deve enviar uma imagem e ou um texto!" });
+      return res.status(400).json({ mgs: "Você deve enviar uma imagem e/ou um texto!" });
     }
-
-    const existe = await db.query("SELECT * FROM usuarios WHERE id = $1", [usuario]);
-    if (!existe.rows.length) {
-      return res.status(400).json({ msg: "Usuário não existe" });
-    }
-
     const r = await db.query(
       "INSERT INTO posts(usuario, texto, img) VALUES ($1, $2, $3) RETURNING *",
-      [usuario, texto, img],
+      [req.user, texto, img],
     );
     if (!r.rows.length) {
       return res.status(400).json({ msg: "Erro inserção de post" });
@@ -88,18 +80,68 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-router.put("/:id", async (req, res) => {
+router.post("/:id/likes", checkToken, async (req, res) => {
   try {
-    let { usuario, texto, img } = req.body || {};
-    if (!usuario) {
-      return res.status(400).json({ mgs: "Usuário inválido" });
+    const existeP = await db.query("SELECT * FROM posts WHERE id = $1", [req.params.id]);
+    if (!existeP.rows.length) {
+      return res.status(400).json({ msg: "Post não existe" });
     }
+
+    const r = await db.query("SELECT * FROM likes WHERE post = $1 AND usuario = $2", [
+      req.params.id,
+      req.user,
+    ]);
+    if (!r.rows.length) {
+      const ins = await db.query("INSERT INTO likes(usuario, post) VALUES ($1, $2) RETURNING *", [
+        req.user,
+        req.params.id,
+      ]);
+      if (ins.rows.length) {
+        return res.status(201).json({ msg: "Like adicionado com sucesso!" });
+      } else {
+        return res.status(500).json({ msg: "Erro ao adicionar o like!" });
+      }
+    } else {
+      const del = await db.query("DELETE FROM likes WHERE usuario = $1 AND post = $2 RETURNING *", [
+        req.user,
+        req.params.id,
+      ]);
+      if (del.rows.length) {
+        return res.status(201).json({ msg: "Like removido com sucesso!" });
+      } else {
+        return res.status(500).json({ msg: "Erro ao remover o like!" });
+      }
+    }
+  } catch (error) {
+    return res.status(500).json({ msg: "Erro geral" });
+  }
+});
+
+router.get("/:id/likes", async (req, res) => {
+  try {
+    const existeP = await db.query("SELECT * FROM posts WHERE id = $1", [req.params.id]);
+    if (!existeP.rows.length) {
+      return res.status(400).json({ msg: "Post não existe" });
+    }
+    const r = await db.query("SELECT * FROM likes WHERE post = $1 ", [req.params.id]);
+
+    const lista = [];
+    for (let item of r.rows) {
+      const { post, ...like } = item;
+      lista.push(like);
+    }
+    return res.status(200).json(lista);
+  } catch (error) {
+    return res.status(500).json({ msg: "Erro geral" });
+  }
+});
+
+router.put("/:id", checkToken, async (req, res) => {
+  try {
+    let { texto, img } = req.body || {};
+
     if (!texto && !img) {
       return res.status(400).json({ mgs: "Você deve enviar uma imagem e ou um texto!" });
-    }
-    const existeU = await db.query("SELECT * FROM usuarios WHERE id = $1", [usuario]);
-    if (!existeU.rows.length) {
-      return res.status(400).json({ msg: "Usuário não existe" });
     }
 
     const post = await db.query("SELECT * FROM posts WHERE id = $1", [req.params.id]);
@@ -107,7 +149,7 @@ router.put("/:id", async (req, res) => {
       return res.status(400).json({ msg: "Post não existe" });
     }
 
-    if (usuario != post.rows[0].usuario) {
+    if (req.user != post.rows[0].usuario) {
       return res.status(403).json({ msg: "Você está tentando editar um post de outro usuário" });
     }
 
@@ -129,23 +171,15 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", checkToken, async (req, res) => {
   try {
-    const { usuario } = req.body || {};
     const post = await db.query("SELECT * FROM posts WHERE id = $1", [req.params.id]);
     if (!post.rows.length) {
       return res.status(400).json({ msg: "Post não encontrado" });
     }
-
-    const existeU = await db.query("SELECT * FROM usuarios WHERE id = $1", [usuario]);
-    if (!existeU.rows.length) {
-      return res.status(400).json({ msg: "Usuario não existe" });
-    }
-
-    if (usuario != post.rows[0].usuario) {
+    if (req.user != post.rows[0].usuario) {
       return res.status(403).json({ msg: "Você está tentando deletar um post de outro usuário" });
     }
-
     const r = await db.query("DELETE FROM posts WHERE id = $1 RETURNING *", [req.params.id]);
     if (!r.rows.length) {
       return res.status(500).json({ msg: "Erro ao deletar post!" });
@@ -153,6 +187,51 @@ router.delete("/:id", async (req, res) => {
     return res.status(200).json({ msg: "Post deletado com sucesso!" });
   } catch (error) {
     console.log(error);
+    return res.status(500).json({ msg: "Erro geral" });
+  }
+});
+
+// Comentários
+router.post("/:id/comentarios", checkToken, async (req, res) => {
+  try {
+    const { texto } = req.body || {};
+    if (!texto) {
+      return res.status(400).json({ mgs: "Texto inválido" });
+    }
+
+    const existeP = await db.query("SELECT * FROM posts WHERE id = $1", [req.params.id]);
+    if (!existeP.rows.length) {
+      return res.status(400).json({ msg: "Post não existe" });
+    }
+    const r = await db.query(
+      "INSERT INTO comentarios(usuario, texto, post) VALUES ($1, $2, $3) RETURNING *",
+      [req.user, texto, req.params.id],
+    );
+    if (!r.rows.length) {
+      return res.status(500).json({ msg: "Erro inserção de comentário" });
+    } else {
+      const { post, ...comentario } = r.rows[0];
+      return res.status(201).json(comentario);
+    }
+  } catch (error) {
+    return res.status(500).json({ msg: "Erro geral" });
+  }
+});
+
+router.get("/:id/comentarios", async (req, res) => {
+  try {
+    const existeP = await db.query("SELECT * FROM posts WHERE id = $1", [req.params.id]);
+    if (!existeP.rows.length) {
+      return res.status(400).json({ msg: "Post não existe" });
+    }
+    const r = await db.query("SELECT * FROM comentarios WHERE post = $1", [req.params.id]);
+    let lista = [];
+    for (let item of r.rows) {
+      const { post, ...comentario } = item;
+      lista.push(comentario);
+    }
+    res.status(200).json(lista);
+  } catch (error) {
     return res.status(500).json({ msg: "Erro geral" });
   }
 });

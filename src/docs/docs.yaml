@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: API de Rede Social
   version: 1.0.0
-  description: Documentação completa unificada (Usuários, Posts, Comentários e Likes) com todos os schemas de erro e sucesso mapeados.
+  description: Documentação do sistema de rede social.
 
 servers:
   - url: http://localhost:3000
@@ -15,6 +15,13 @@ tags:
   - name: Likes
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Insira o token JWT gerado no login.
+
   schemas:
     Usuario:
       type: object
@@ -33,47 +40,66 @@ components:
         img: { type: string, nullable: true }
         editado: { type: boolean }
         data: { type: string, format: date-time }
-        comentarios:
-          type: array
-          items: { $ref: '#/components/schemas/ComentarioDetalhado' }
-        likes:
-          type: array
-          items: { $ref: '#/components/schemas/LikeDetalhado' }
 
-    ComentarioDetalhado:
+    PostDetalhado:
+      allOf:
+        - $ref: "#/components/schemas/Post"
+        - type: object
+          properties:
+            comentarios:
+              type: array
+              items: { $ref: "#/components/schemas/ComentarioSemPost" }
+            likes:
+              type: array
+              items: { $ref: "#/components/schemas/Like" }
+
+    Comentario:
+      type: object
+      properties:
+        id: { type: integer }
+        usuario: { type: integer }
+        post: { type: integer }
+        texto: { type: string }
+        editado: { type: boolean }
+        data: { type: string, format: date-time }
+
+    ComentarioSemPost:
       type: object
       properties:
         id: { type: integer }
         usuario: { type: integer }
         texto: { type: string }
+        editado: { type: boolean }
         data: { type: string, format: date-time }
 
-    LikeDetalhado:
+    Like:
       type: object
       properties:
         id: { type: integer }
         usuario: { type: integer }
         data: { type: string, format: date-time }
 
-    ErroMsg:
+    Mensagem:
       type: object
       properties:
-        msg: { type: string, description: "Mensagem de erro geral ou de negócio" }
+        msg: { type: string, description: "Mensagem de retorno (sucesso ou erro)" }
 
 paths:
-  # --- USUÁRIOS ---
+  # ==========================================
+  #                 USUÁRIOS
+  # ==========================================
   /usuarios/:
     get:
       summary: Lista todos os usuários
       tags: [Usuários]
       responses:
         "200":
-          description: Lista de usuários (sem senhas)
+          description: Lista de usuários
           content:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/Usuario' }
+                items: { $ref: "#/components/schemas/Usuario" }
 
     post:
       summary: Cadastro de usuário
@@ -89,23 +115,36 @@ paths:
                 login: { type: string }
                 senha: { type: string }
                 nome: { type: string }
-                img: { type: string }
+                img: { type: string, nullable: true }
       responses:
         "201":
           description: Usuário criado com sucesso
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Usuario' }
+              schema: { $ref: "#/components/schemas/Usuario" }
         "400":
-          description: Validação falhou ou usuário já existe
+          description: Campos inválidos ou usuário já existente
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErroMsg' }
+              schema: { $ref: "#/components/schemas/Mensagem" }
         "500":
           description: Erro geral no servidor
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErroMsg' }
+              schema: { $ref: "#/components/schemas/Mensagem" }
+
+  /usuarios/check:
+    get:
+      summary: Verifica se o usuário está logado
+      tags: [Usuários]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Usuário logado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Mensagem" }
 
   /usuarios/login:
     post:
@@ -129,78 +168,81 @@ paths:
               schema:
                 type: object
                 properties:
-                  msg: { type: string, example: "Login efetuado com sucesso" }
-                  usuario: { $ref: '#/components/schemas/Usuario' }
+                  msg: { type: string }
+                  token: { type: string }
+                  usuario: { $ref: "#/components/schemas/Usuario" }
         "400":
           description: Campos inválidos ou usuário não existe
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErroMsg' }
+              schema: { $ref: "#/components/schemas/Mensagem" }
         "403":
           description: Senha incorreta
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErroMsg' }
+              schema: { $ref: "#/components/schemas/Mensagem" }
         "500":
-          description: Erro geral
+          description: Erro geral no servidor
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErroMsg' }
+              schema: { $ref: "#/components/schemas/Mensagem" }
 
-  # --- POSTS ---
+  # ==========================================
+  #                  POSTS
+  # ==========================================
   /posts/:
     get:
-      summary: Lista posts com detalhes
+      summary: Lista todos os posts com comentários e likes
       tags: [Posts]
       responses:
         "200":
-          description: Lista de posts completa
+          description: Lista completa de posts
           content:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/Post' }
+                items: { $ref: "#/components/schemas/PostDetalhado" }
         "400":
           description: Nenhum post cadastrado
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErroMsg' }
+              schema: { $ref: "#/components/schemas/Mensagem" }
         "500":
           description: Erro geral
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErroMsg' }
+              schema: { $ref: "#/components/schemas/Mensagem" }
 
     post:
       summary: Cria um post
       tags: [Posts]
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [usuario]
               properties:
-                usuario: { type: integer }
                 texto: { type: string }
                 img: { type: string }
       responses:
         "201":
-          description: Post criado (editado = false)
+          description: Post criado com sucesso
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Post' }
+              schema: { $ref: "#/components/schemas/Post" }
         "400":
-          description: Validação falhou ou erro de inserção
+          description: Falta de texto/imagem ou erro de inserção
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErroMsg' }
+              schema: { $ref: "#/components/schemas/Mensagem" }
         "500":
           description: Erro geral
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErroMsg' }
+              schema: { $ref: "#/components/schemas/Mensagem" }
 
   /posts/{id}:
     parameters:
@@ -209,36 +251,36 @@ paths:
         required: true
         schema: { type: integer }
     get:
-      summary: Busca um post específico
+      summary: Busca um post específico pelo ID
       tags: [Posts]
       responses:
         "200":
-          description: Post encontrado com sucesso
+          description: Post encontrado com seus comentários e likes
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Post' }
+              schema: { $ref: "#/components/schemas/PostDetalhado" }
         "400":
           description: Post não encontrado
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErroMsg' }
+              schema: { $ref: "#/components/schemas/Mensagem" }
         "500":
           description: Erro geral
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErroMsg' }
+              schema: { $ref: "#/components/schemas/Mensagem" }
     put:
       summary: Edita um post
       tags: [Posts]
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [usuario]
               properties:
-                usuario: { type: integer }
                 texto: { type: string }
                 img: { type: string }
       responses:
@@ -246,92 +288,165 @@ paths:
           description: Post editado com sucesso
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Post' }
+              schema: { $ref: "#/components/schemas/Post" }
         "400":
-          description: Erro de validação ou post inexistente
+          description: Post não existe ou erro de edição
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErroMsg' }
+              schema: { $ref: "#/components/schemas/Mensagem" }
         "403":
-          description: Tentativa de editar post de terceiros
+          description: Tentativa de editar post de outro usuário
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErroMsg' }
+              schema: { $ref: "#/components/schemas/Mensagem" }
         "500":
           description: Erro geral
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErroMsg' }
+              schema: { $ref: "#/components/schemas/Mensagem" }
     delete:
       summary: Remove um post
       tags: [Posts]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [usuario]
-              properties:
-                usuario: { type: integer }
+      security:
+        - bearerAuth: []
       responses:
         "200":
-          description: Post deletado
+          description: Post deletado com sucesso
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-                  msg: { type: string, example: "Post deletado com sucesso!" }
+              schema: { $ref: "#/components/schemas/Mensagem" }
         "400":
-          description: Post ou usuário não encontrado
+          description: Post não encontrado
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErroMsg' }
+              schema: { $ref: "#/components/schemas/Mensagem" }
         "403":
-          description: Tentativa de deletar post de terceiros
+          description: Tentativa de deletar post de outro usuário
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErroMsg' }
-        "500":
-          description: Erro ao deletar ou erro geral
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ErroMsg' }
-
-  # --- COMENTÁRIOS ---
-  /comentarios/:
-    post:
-      summary: Cria um comentário
-      tags: [Comentários]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [usuario, post, texto]
-              properties:
-                usuario: { type: integer }
-                post: { type: integer }
-                texto: { type: string }
-      responses:
-        "201":
-          description: Comentário criado
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ComentarioDetalhado' }
-        "400":
-          description: Erro de validação
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ErroMsg' }
+              schema: { $ref: "#/components/schemas/Mensagem" }
         "500":
           description: Erro geral
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErroMsg' }
+              schema: { $ref: "#/components/schemas/Mensagem" }
 
+  # ==========================================
+  #         LIKES (Sub-recurso de Posts)
+  # ==========================================
+  /posts/{id}/likes:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    get:
+      summary: Lista os likes de um post
+      tags: [Likes]
+      responses:
+        "200":
+          description: Lista de likes
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Like" }
+        "400":
+          description: Post não existe
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Mensagem" }
+        "500":
+          description: Erro geral
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Mensagem" }
+    post:
+      summary: Adiciona ou remove (Toggle) like de um post
+      tags: [Likes]
+      security:
+        - bearerAuth: []
+      responses:
+        "201":
+          description: Like adicionado ou removido com sucesso
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Mensagem" }
+        "400":
+          description: Post não existe
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Mensagem" }
+        "500":
+          description: Erro geral ou erro na operação do DB
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Mensagem" }
+
+  # ==========================================
+  #      COMENTÁRIOS (Sub-recurso de Posts)
+  # ==========================================
+  /posts/{id}/comentarios:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    get:
+      summary: Lista os comentários de um post
+      tags: [Comentários]
+      responses:
+        "200":
+          description: Lista de comentários
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ComentarioSemPost" }
+        "400":
+          description: Post não existe
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Mensagem" }
+        "500":
+          description: Erro geral
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Mensagem" }
+    post:
+      summary: Adiciona um comentário em um post
+      tags: [Comentários]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [texto]
+              properties:
+                texto: { type: string }
+      responses:
+        "201":
+          description: Comentário criado com sucesso
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ComentarioSemPost" }
+        "400":
+          description: Texto inválido ou Post não existe
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Mensagem" }
+        "500":
+          description: Erro geral
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Mensagem" }
+
+  # ==========================================
+  #      EDIÇÃO/EXCLUSÃO DE COMENTÁRIOS
+  # ==========================================
   /comentarios/{id}:
     parameters:
       - in: path
@@ -339,102 +454,58 @@ paths:
         required: true
         schema: { type: integer }
     put:
-      summary: Edita um comentário
+      summary: Edita um comentário específico
       tags: [Comentários]
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [usuario, texto]
+              required: [texto]
               properties:
-                usuario: { type: integer }
                 texto: { type: string }
       responses:
         "201":
-          description: Comentário editado
+          description: Comentário editado com sucesso
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ComentarioDetalhado' }
+              schema: { $ref: "#/components/schemas/Comentario" }
         "400":
-          description: Erro de validação
+          description: Texto inválido, comentário inexistente ou erro de edição
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErroMsg' }
+              schema: { $ref: "#/components/schemas/Mensagem" }
         "403":
-          description: Tentativa de editar comentário de terceiros
+          description: Tentativa de editar comentário de outro usuário
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErroMsg' }
+              schema: { $ref: "#/components/schemas/Mensagem" }
         "500":
           description: Erro geral
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErroMsg' }
+              schema: { $ref: "#/components/schemas/Mensagem" }
     delete:
-      summary: Remove um comentário
+      summary: Remove um comentário específico
       tags: [Comentários]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [usuario]
-              properties:
-                usuario: { type: integer }
+      security:
+        - bearerAuth: []
       responses:
         "200":
-          description: Removido com sucesso
+          description: Comentário removido com sucesso
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-                  msg: { type: string, example: "Comentário removido com sucesso" }
+              schema: { $ref: "#/components/schemas/Mensagem" }
         "400":
-          description: Erro de permissão
+          description: Comentário não existe ou tentativa de deletar comentário de outro usuário
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErroMsg' }
+              schema: { $ref: "#/components/schemas/Mensagem" }
         "500":
-          description: Erro no servidor
+          description: Erro geral ou erro ao remover do banco
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErroMsg' }
-
-  # --- LIKES ---
-  /likes/:
-    post:
-      summary: Toggle Like (Adiciona ou Remove)
-      tags: [Likes]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [usuario, post]
-              properties:
-                usuario: { type: integer }
-                post: { type: integer }
-      responses:
-        "201":
-          description: Sucesso na operação de Like/Unlike
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  msg: { type: string, example: "Like adicionado com sucesso!" }
-        "400":
-          description: Usuário ou Post não encontrado
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ErroMsg' }
-        "500":
-          description: Erro na operação de banco de dados
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ErroMsg' }
+              schema: { $ref: "#/components/schemas/Mensagem" }

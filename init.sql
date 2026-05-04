@@ -1,4 +1,3 @@
--- 1. ESTRUTURA (Igual à anterior, com nomes de constraints corrigidos)
 CREATE TABLE IF NOT EXISTS usuarios (
     id SERIAL PRIMARY KEY,
     nome VARCHAR(255) NOT NULL,
@@ -39,11 +38,7 @@ CREATE TABLE IF NOT EXISTS likes (
     CONSTRAINT unique_user_post_like UNIQUE (usuario, post)
 );
 
--- ==========================================
--- 2. SEED IDEMPOTENTE (Não gera duplicatas)
--- ==========================================
 
--- Usuários: Já temos a constraint UNIQUE no 'login'
 INSERT INTO usuarios (id, nome, login, senha)
 VALUES
 (1, 'João Silva', 'joao', '$2b$10$6exLzLK/0OvfxGIRQDq7b.JwYneYDzLgV.T.BcVPRwDRJG6Jdmb82'),
@@ -51,7 +46,6 @@ VALUES
 (3, 'Carlos Lima', 'carlos', '$2b$10$AvzkulBn6HJW2oarBHcEuOHtH8ju70dfpKU39DqE1nHTcoVjmZMPK')
 ON CONFLICT (id) DO NOTHING;
 
--- Posts: Usamos o ID fixo para evitar duplicar o texto
 INSERT INTO posts (id, usuario, texto, img)
 VALUES
 (1, 1, 'Primeiro post do João!', NULL),
@@ -59,7 +53,6 @@ VALUES
 (3, 3, 'Carlos chegou na rede social 🚀', NULL)
 ON CONFLICT (id) DO NOTHING;
 
--- Comentários: Usamos o ID fixo
 INSERT INTO comentarios (id, usuario, post, texto)
 VALUES
 (1, 2, 1, 'Muito bom, João!'),
@@ -69,17 +62,10 @@ VALUES
 (5, 1, 3, 'Bem-vindo, Carlos!')
 ON CONFLICT (id) DO NOTHING;
 
--- Likes: A constraint UNIQUE (usuario, post) impede a duplicata
 INSERT INTO likes (usuario, post)
 VALUES
 (2, 1), (3, 1), (1, 2), (3, 2), (1, 3), (2, 3)
 ON CONFLICT (usuario, post) DO NOTHING;
-
--- ==========================================
--- 3. AJUSTE DAS SEQUÊNCIAS (CRÍTICO)
--- ==========================================
--- Como inserimos IDs manualmente, o PostgreSQL "perde a conta" de onde o SERIAL parou.
--- Estes comandos resetam o contador para o próximo ID disponível.
 
 SELECT setval('usuarios_id_seq', (SELECT MAX(id) FROM usuarios));
 SELECT setval('posts_id_seq', (SELECT MAX(id) FROM posts));

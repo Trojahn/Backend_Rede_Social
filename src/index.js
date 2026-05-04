@@ -6,18 +6,22 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(cors());
+app.use(
+  cors({
+    origin: "*",
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
+    allowedHeaders: ["Content-Type", "Authorization"],
+  }),
+);
 
 const usuario = require("./rotas/usuarios");
 const comentario = require("./rotas/comentarios");
 const post = require("./rotas/posts");
-const like = require("./rotas/likes");
 app.use("/usuarios", usuario);
 app.use("/comentarios", comentario);
 app.use("/posts", post);
-app.use("/likes", like);
 
-app.use(["/usuarios", "/comentarios", "/posts", "/likes"], (req, res) => {
+app.use(["/usuarios", "/comentarios", "/posts"], (req, res) => {
   res.status(404).json({ msg: "Rota ou método não encontrado na API" });
 });
 
