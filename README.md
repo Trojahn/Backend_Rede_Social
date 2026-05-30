@@ -2,25 +2,19 @@
 
 > Repositório contendo um Backend didático de uma rede social.
 
-### Avisos
+## ⚠️ Avisos
 
-Usar apenas para desenvolvimento local. Adaptações são necessárias caso deseje publicar o website em produção.
+Este sistema foi configurado para ambiente de desenvolvimento. Para implantação em produção, revise as variáveis de ambiente, configurações de CORS e segurança do banco de dados.
 
-## 💻 Pré-requisitos
+## 🚀 Executando o Sistema
 
-Antes de começar, verifique que sua máquina possua:
-
-- Docker
-
-## 🚀 Executando
-
-Com o terminal (ou prompt de comando), entre na pasta do repositório e digite o seguinte comando:
+Para subir o banco de dados e o servidor Node.js automaticamente, utilize o terminal na raiz do projeto e execute:
 
 ```
 docker compose up --build -d
 ```
 
-## Reiniciando o servidor
+## 🚀 Reiniciando o servidor
 
 Caso queira reiniciar o servidor em algum momento, sem perder os arquivos desenvolvidos, execute os seguintes comandos...
 
@@ -29,26 +23,16 @@ docker compose down -v
 docker compose up --build -d
 ```
 
-## Desenvolvimento do frontend
-
-Coloque os arquivos desenvolvidos na pasta `/frontend`, incluindo arquivos CSS, JS e etc. Lembre-se que a página inicial deve se chamar `index.html`.
-
-
 ## ☕ Endereços para acesso
 
-A documentação do backend pode ser acessada no endereço abaixo:
+A documentação swagger do backend pode ser acessada no endereço abaixo:
 
 ```
-http://localhost:8080/documentacao.html
+http://localhost:3000/
 ```
 
 A página inicial do website pode ser encontrada em:
 
-```
-http://localhost:8080
-```
+## Deploy
 
-O endereço base para o backend é:
-```
-http://localhost:3000
-```
+Configure os detalhes de deploy no arquivo `.env`, seguindo o exemplo presente em `.env.example`.

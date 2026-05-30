@@ -5,7 +5,7 @@ info:
   description: Documentação do sistema de rede social.
 
 servers:
-  - url: http://localhost:3000
+  - url: ./
     description: Servidor Local
 
 tags:
