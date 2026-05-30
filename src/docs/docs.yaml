@@ -4,10 +4,6 @@ info:
   version: 1.0.0
   description: Documentação do sistema de rede social.
 
-servers:
-  - url: ./
-    description: Servidor Local
-
 tags:
   - name: Usuários
   - name: Posts

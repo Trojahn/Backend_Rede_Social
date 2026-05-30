@@ -27,11 +27,39 @@ app.use(["/usuarios", "/comentarios", "/posts"], (req, res) => {
 
 app.use(
   "/",
+  (req, res, next) => {
+    const originalUri = req.headers["x-original-uri"];
+    let prefix = "";
+
+    if (originalUri) {
+      const pathOriginal = originalUri.split("?")[0];
+      const pathInternal = req.originalUrl.split("?")[0];
+      if (pathOriginal.endsWith(pathInternal)) {
+        prefix = pathOriginal.substring(0, pathOriginal.length - pathInternal.length);
+      }
+
+      if (prefix.endsWith("/")) prefix = prefix.slice(0, -1);
+    }
+
+    const dynamicSpecs = JSON.parse(JSON.stringify(specs));
+
+    dynamicSpecs.servers = [
+      {
+        url: prefix || "/",
+        description: prefix ? `Proxy (${prefix})` : "Servidor local",
+      },
+    ];
+
+    req.swaggerDoc = dynamicSpecs;
+    next();
+  },
   swaggerUi.serve,
-  swaggerUi.setup(specs, {
-    customCss: ".swagger-ui .topbar { display: none }",
-    customSiteTitle: "Backend Rede Social",
-  }),
+  (req, res) => {
+    swaggerUi.setup(null, {
+      customCss: ".swagger-ui .topbar { display: none }",
+      customSiteTitle: "Backend Produtos e Fornecedores",
+    })(req, res);
+  },
 );
 
 app.listen(port, () => {
