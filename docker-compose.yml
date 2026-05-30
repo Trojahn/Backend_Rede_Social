@@ -8,10 +8,6 @@ services:
       - /usr/src/app/node_modules
     ports:
       - "3000:3000"
-    environment:
-      - NODE_ENV=development
-      - DATABASE_URL=postgres://usuario:senha@database:5432/bancodados
-      - PORT=3000
     depends_on:
       - database
 

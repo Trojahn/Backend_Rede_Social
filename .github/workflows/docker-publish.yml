@@ -1,0 +1,57 @@
+name: Build e Push da Imagem Docker
+
+# Define quando o workflow será executado
+on:
+  push:
+    branches: [ "main", "master" ] # Executa ao dar push na branch principal
+  # Permite rodar o workflow manualmente pela aba "Actions" do GitHub
+  workflow_dispatch:
+
+# Define as permissões necessárias para o token automático do GitHub
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Baixa o código do seu repositório para a máquina virtual do GitHub
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      # 2. Configura o Docker Buildx (ferramenta moderna de build do Docker)
+      - name: Configurar Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 3. Faz login no GitHub Container Registry usando o token automático
+      - name: Login no GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # 4. Extrai metadados (como nome do repositório e tags)
+      - name: Extrair metadados do Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          # Gera a tag 'latest' e uma tag baseada no hash do commit
+          tags: |
+            type=raw,value=latest
+            type=sha
+
+      # 5. Constrói a imagem lendo seu Dockerfile e envia para o GHCR
+      - name: Build e Push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Opcional: Usa cache do GitHub para deixar os próximos builds mais rápidos
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
