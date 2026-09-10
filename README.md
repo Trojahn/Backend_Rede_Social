@@ -31,7 +31,6 @@ A documentação swagger do backend pode ser acessada no endereço abaixo:
 http://localhost:3000/
 ```
 
-A página inicial do website pode ser encontrada em:
 
 ## Deploy
 
